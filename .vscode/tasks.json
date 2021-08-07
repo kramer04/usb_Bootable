@@ -1,0 +1,47 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "C/C++: g++ build active file",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": true
+			},
+			"command": "/usr/bin/g++",
+			"args": [
+				"-g",
+				"${file}",
+				"${fileDirname}/src/*.cpp",
+				"-lstdc++fs",
+				
+				"-Wall",
+				"-Wextra",
+				"-O2",
+				"-I",
+				"${fileDirname}/include",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}",
+				"`pkg-config",
+				"gtkmm-3.0",
+				"--cflags",
+				"--libs`"
+			],
+			"options": {
+				"cwd": "/usr/bin"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/g++"
+		}
+	]
+}
