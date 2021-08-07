@@ -6,12 +6,6 @@
 
 long double folder_size(std::string chemin)
 {
-<<<<<<< HEAD
-  //calcul la taille du dossier
-=======
-  //unsigned long long f_size = 0;
-  //long double dossier_size = 0.0;
->>>>>>> 9e261c969984c1803a09fe86e011269c628f6198
   unsigned long long dossier_size {0};
   for (std::filesystem::recursive_directory_iterator it(chemin); it != std::filesystem::recursive_directory_iterator(); it++)
   {
@@ -79,23 +73,6 @@ void Worker::do_work(Fenetre *caller)
     {
       std::cout << "Démonte la clé usb" << std::endl;
     }
-<<<<<<< HEAD
-
-    //https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i
-
-=======
-
-    //std::system("sudo umount $umountUsb");
-
-    //std::cout << "Démonte la clé usb" << std::endl;
-
-    //std::cout << "Lance la copie" << std::endl;
-
-    //system(R"(while read line;do export line; done < <(sudo dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g')");
-
-    //https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i
-    //system("./start.sh");
->>>>>>> 9e261c969984c1803a09fe86e011269c628f6198
     if (std::system("echo \"Lance la copie\";dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g' > out.txt") != -1)
     {
       std::cout << "" << std::endl;
@@ -169,10 +146,6 @@ long long Worker::out()
     std::cout << "Ne trouve pas le dernier caractère de la ligne" << std::endl;
   }
   lastline.erase(std::remove_if(lastline.begin(), lastline.end(), [] (char c){return(c == ' ' || c == '\r' || c == '\n'); }), lastline.end());
-<<<<<<< HEAD
-=======
-  //std::cout << "lastline = " << lastline << std::endl;
->>>>>>> 9e261c969984c1803a09fe86e011269c628f6198
   long sizeUsb {0};
   if (lastline == "")
   {
