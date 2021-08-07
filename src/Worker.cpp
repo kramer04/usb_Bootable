@@ -6,8 +6,8 @@
 
 long double folder_size(std::string chemin)
 {
-  //unsigned long long f_size = 0;
-  long double dossier_size = 0.0;
+  //calcul la taille du dossier
+  unsigned long long dossier_size {0};
   for (std::filesystem::recursive_directory_iterator it(chemin); it != std::filesystem::recursive_directory_iterator(); it++)
   {
     if (!std::filesystem::is_directory(*it))
@@ -59,36 +59,28 @@ void Worker::do_work(Fenetre *caller)
     strcpy(d, source.c_str());
     putenv(d);
 
-    //source_size = folder_size(caller->filename);
-    //source_size = caller->filename.size();
     source_size = std::filesystem::file_size(caller->filename);
     std::cout << "source size = " << source_size << std::endl;
     std::cout << "Source = " << source << std::endl;
     std::cout << "Cible = " << cible << std::endl;
-    //system("echo $source;echo $pathToUsb;echo $umountUsb");
-    //system("dd if=$source of=$pathToUsb bs=4M status=progress && sync");
+
   } //fin mutex
 
   std::thread t1([] (){
     std::cout << "Lance le thread t1" << std::endl;
     //if (system("sudo mountpoint -q $umountUsb && umount $umountUsb") != -1)
-    /*
+
     if (system("sudo umount $umountUsb") != -1)
-      {
+    {
       std::cout << "Démonte la clé usb" << std::endl;
-      }
-*/
-    std::system("sudo umount $umountUsb");
-
-    std::cout << "Démonte la clé usb" << std::endl;
-
-    std::cout << "Lance la copie" << std::endl;
-
-    //system(R"(while read line;do export line; done < <(sudo dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g')");
+    }
 
     //https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i
-    //system("./start.sh");
-    std::system("dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g' > out.txt");
+
+    if (std::system("echo \"Lance la copie\";dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g' > out.txt") != -1)
+    {
+      std::cout << "" << std::endl;
+    }
     //std::system("unset t_std;sudo eval \"$((echo dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g') \\ > >t_std=$(cat);typeset -p t_std)\"");
     std::cout << "Fin de la copie" << std::endl;
   });
@@ -96,26 +88,11 @@ void Worker::do_work(Fenetre *caller)
   std::thread t2([this, caller] (){
     std::cout << "Lance le thread t2" << std::endl;
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    //int i {0};
-    //double taille {0.0};
+
     do
     {
-      //char *ligne = getenv("echo $t_std");
-      //std::stringstream strl{out()};
-      ////strl << ligne;
-      //std::string l{strl.str()};
-      //l = strl.str();
-      //std::cout << "LIGNE = " << i << " " << l << std::endl;
-      //i++;
-      //f_size_usb = std::atoll(l.c_str());
       f_size_usb = out();
-      //std::cout << "f_size_usb = " << f_size_usb << std::endl;
       m_fraction_done = static_cast<float>(f_size_usb) / source_size;
-      //std::cout << "m_fraction_done = " << m_fraction_done << std::endl;
-      //m_fraction_done += 0.01;
-      //taille += 0.1;
-      //m_fraction_done = taille / source_size;
-      //out();
       caller->notify();
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
     } while (m_fraction_done < 1);
@@ -172,10 +149,7 @@ long long Worker::out()
   {
     std::cout << "Ne trouve pas le dernier caractère de la ligne" << std::endl;
   }
-  //auto it {std::remove(std::begin(lastline), std::end(lastline), ' ')};
-  //lastline.erase(it, std::end(lastline));
   lastline.erase(std::remove_if(lastline.begin(), lastline.end(), [] (char c){return(c == ' ' || c == '\r' || c == '\n'); }), lastline.end());
-  std::cout << "lastline = " << lastline << std::endl;
   long sizeUsb {0};
   if (lastline == "")
   {
