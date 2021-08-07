@@ -26,7 +26,7 @@ boiteV(Gtk::ORIENTATION_VERTICAL, 5), boutonBox(Gtk::ORIENTATION_HORIZONTAL),
 boutonQ(Gtk::Stock::QUIT), lance_copie("Lance la copie"), ouvrirFichier("Fichier iso/img"),
 m_Dispatcher(), m_WorkerThread(nullptr)
 {
-  set_title("Création clé usb bootable raspberry");
+  set_title("Création d'une clé usb bootable");
   set_border_width(5);
   set_default_size(320, 150);
   set_position(Gtk::WIN_POS_CENTER);
