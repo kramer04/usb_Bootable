@@ -8,7 +8,7 @@
 
 ## Install library glibmm-3.0
 ```
-sudo apt-get install libglibmm-3.0-dev
+sudo apt-get install libgtkmm-3.0-dev
 ```
 
 ## How to compile
