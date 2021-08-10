@@ -6,11 +6,11 @@
 ### To use on Ubuntu
 
 
-#### Install library glibmm-3.0
+## Install library glibmm-3.0
 
 `sudo apt-get install libglibmm-3.0-dev`
 
-#### How to compile
+## How to compile
 Open a terminal where you have unzip files
 
 ```
