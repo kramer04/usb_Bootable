@@ -2,14 +2,15 @@
 
 # usb_Bootable
 # Make usb bootable for Windows, Linux OS or Raspbeberry OS
-to use on Ubuntu
+
+### To use on Ubuntu
 
 
-Install library glibmm-3.0
+#### Install library glibmm-3.0
 
 `sudo apt-get install libglibmm-3.0-dev`
 
-# How to compile
+#### How to compile
 Open a terminal where you have unzip files
 
 ```
@@ -20,3 +21,4 @@ g++ -g main.cpp src/*.cpp -lstdc++fs -pthread -I include -o main `pkg-config gtk
 To launch programm
 
 `sudo ./main`
+
