@@ -10,6 +10,7 @@
 ```
 sudo apt-get install libgtkmm-3.0-dev
 ```
+![French doc about gtkmm](https://doc.ubuntu-fr.org/gtkmm)
 
 ## How to compile
 ### Open a terminal where you have unzip files
