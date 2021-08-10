@@ -1,23 +1,11 @@
 #include "Worker.h"
 #include "Fenetre.h"
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
-#include <algorithm>
 
-long double folder_size(std::string chemin)
-{
-  unsigned long long dossier_size {0};
-  for (std::filesystem::recursive_directory_iterator it(chemin); it != std::filesystem::recursive_directory_iterator(); it++)
-  {
-    if (!std::filesystem::is_directory(*it))
-    {
-      dossier_size += std::filesystem::file_size(*it);
-    }
-  }
-  return dossier_size;
-}
-
-Worker::Worker() : m_Mutex(), m_has_stopped(false), source_size(0), m_fraction_done(0.0)
+Worker::Worker() :
+  m_Mutex(), m_has_stopped(false), source_size(0), m_fraction_done(0.0)
 {}
 void Worker::get_data(double *fraction_done)
 {
@@ -65,7 +53,7 @@ void Worker::do_work(Fenetre *caller)
 
   } //fin mutex
 
-  std::thread t1([] (){
+  std::thread t1([] () {
     std::cout << "Lance le thread t1" << std::endl;
     //if (system("sudo mountpoint -q $umountUsb && umount $umountUsb") != -1)
 
@@ -73,6 +61,17 @@ void Worker::do_work(Fenetre *caller)
     {
       std::cout << "Démonte la clé usb" << std::endl;
     }
+
+    //std::system("sudo umount $umountUsb");
+
+    //std::cout << "Démonte la clé usb" << std::endl;
+
+    //std::cout << "Lance la copie" << std::endl;
+
+    //system(R"(while read line;do export line; done < <(sudo dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g')");
+
+    //https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i
+    //system("./start.sh");
     if (std::system("echo \"Lance la copie\";dd if=$source of=$pathToUsb bs=4M conv=fdatasync status=progress 2>&1 | stdbuf -o1 tr '\r' '\n' | stdbuf -o1 cut -d' ' -f1 | sed -u 's/[a-z]*//g' > out.txt") != -1)
     {
       std::cout << "" << std::endl;
@@ -81,9 +80,9 @@ void Worker::do_work(Fenetre *caller)
     std::cout << "Fin de la copie" << std::endl;
   });
 
-  std::thread t2([this, caller] (){
+  std::thread t2([this, caller] () {
     std::cout << "Lance le thread t2" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     do
     {
@@ -123,7 +122,7 @@ long long Worker::out()
     {
       char ch;
       fs.get(ch);
-      if ((int)fs.tellg() <= 1)
+      if ((int) fs.tellg() <= 1)
       {
         fs.seekg(0);
         keepLooping = false;
@@ -145,13 +144,17 @@ long long Worker::out()
   {
     std::cout << "Ne trouve pas le dernier caractère de la ligne" << std::endl;
   }
-  lastline.erase(std::remove_if(lastline.begin(), lastline.end(), [] (char c){return(c == ' ' || c == '\r' || c == '\n'); }), lastline.end());
+  lastline.erase(std::remove_if(lastline.begin(), lastline.end(), [] (char c) { return (c == ' ' || c == '\r' || c == '\n'); }), lastline.end());
+
   long sizeUsb {0};
   if (lastline == "")
   {
     sizeUsb = 0;
   }
-  else { sizeUsb = std::stol(lastline); };
+  else
+  {
+    sizeUsb = std::stol(lastline);
+  };
   return sizeUsb;
 }
 void Worker::stop_work()

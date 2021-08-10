@@ -21,10 +21,11 @@ std::string getPopen(std::string cmd)
   return data;
 }
 
-Fenetre::Fenetre() : filename(), chemin_usb(), m_ProgressBar(),
-boiteV(Gtk::ORIENTATION_VERTICAL, 5), boutonBox(Gtk::ORIENTATION_HORIZONTAL),
-boutonQ(Gtk::Stock::QUIT), lance_copie("Lance la copie"), ouvrirFichier("Fichier iso/img"),
-m_Dispatcher(), m_WorkerThread(nullptr)
+Fenetre::Fenetre() :
+  filename(), chemin_usb(), m_ProgressBar(),
+  boiteV(Gtk::ORIENTATION_VERTICAL, 5), boutonBox(Gtk::ORIENTATION_HORIZONTAL),
+  boutonQ(Gtk::Stock::QUIT), lance_copie("Lance la copie"), ouvrirFichier("Fichier iso/img"),
+  m_Dispatcher(), m_WorkerThread(nullptr), state(false)
 {
   set_title("Création d'une clé usb bootable");
   set_border_width(5);
@@ -35,9 +36,12 @@ m_Dispatcher(), m_WorkerThread(nullptr)
   add(boiteV);
 
   pourcentage.set_justify(Gtk::JUSTIFY_CENTER);
+  etat.set_justify(Gtk::JUSTIFY_CENTER);
+  m_frame.add(etat);
 
   boiteV.pack_start(m_ProgressBar, Gtk::PACK_SHRINK);
   boiteV.pack_start(pourcentage, Gtk::PACK_EXPAND_WIDGET);
+  boiteV.pack_end(m_frame);
   boiteV.pack_start(listeDeroulante, Gtk::PACK_SHRINK);
   boiteV.pack_start(boutonBox, Gtk::PACK_SHRINK);
   boutonBox.pack_start(ouvrirFichier, Gtk::PACK_SHRINK);
@@ -52,10 +56,10 @@ m_Dispatcher(), m_WorkerThread(nullptr)
   ouvrirFichier.set_sensitive(false);
 
   //clique
-  boutonQ.signal_clicked().connect([this] (){ on_quit_button_clicked(); });
-  listeDeroulante.signal_changed().connect([this] (){ active_listederoulante(); });
-  ouvrirFichier.signal_clicked().connect([this] (){ ouvrir_fichier(); });
-  lance_copie.signal_clicked().connect([this] (){ on_start_button_clicked(); });
+  boutonQ.signal_clicked().connect([this] () { on_quit_button_clicked(); });
+  listeDeroulante.signal_changed().connect([this] () { active_listederoulante(); });
+  ouvrirFichier.signal_clicked().connect([this] () { ouvrir_fichier(); });
+  lance_copie.signal_clicked().connect([this] () { on_start_button_clicked(); });
 
   //dispatcher
   m_Dispatcher.connect(sigc::mem_fun(*this, &Fenetre::on_notification_from_worker_thread));
@@ -88,7 +92,23 @@ void Fenetre::update_widgets()
 
   //fraction_done == 100 ? precision = 4 : precision = 3;
   //std::string trimmedString = std::to_string(doubleVal).substr(0, std::to_string(doubleVal).find(".") + precisionVal + 1);
+  //suprime les chiffres après la virgule
   pourcentage.set_text(std::to_string(fraction_done).substr(0, std::to_string(fraction_done).find(".") + precision) + " %");
+
+  if (state)
+  {
+    etat.set_text("");
+    state = !state;
+  }
+  else
+  {
+    etat.set_text("Wait ...");
+    state = !state;
+  }
+  if (fraction_done == 100)
+  {
+    etat.set_text("Copie terminée");
+  }
 }
 void Fenetre::on_notification_from_worker_thread()
 {
@@ -125,7 +145,7 @@ void ::Fenetre::on_start_button_clicked()
   {
     //lance un nouveau thread
     m_WorkerThread = new std::thread(
-      [this]{
+      [this] {
       m_worker.do_work(this);
     });
   }
@@ -172,6 +192,10 @@ void Fenetre::on_quit_button_clicked()
     m_worker.stop_work();
     if (m_WorkerThread->joinable())
       m_WorkerThread->join();
+  }
+  if (std::filesystem::exists("out.txt"))
+  {
+    std::filesystem::remove("out.txt");
   }
   hide();
 }
@@ -221,23 +245,23 @@ void Fenetre::ouvrir_fichier()
   switch (result)
   {
     case (Gtk::RESPONSE_OK):
-      {
-        //Notice that this is a std::string, not a Glib::ustring.
-        filename = dialog.get_filename();
-        std::cout << "Fichier sélectionné : " << filename << std::endl;
-        std::cout << "Taille de filename = " << std::filesystem::file_size(filename) << std::endl;
-        break;
-      }
+    {
+      //Notice that this is a std::string, not a Glib::ustring.
+      filename = dialog.get_filename();
+      std::cout << "Fichier sélectionné : " << filename << std::endl;
+      std::cout << "Taille de filename = " << std::filesystem::file_size(filename) << std::endl;
+      break;
+    }
     case (Gtk::RESPONSE_CANCEL):
-      {
-        std::cout << "Clic sur annuler" << std::endl;
-        break;
-      }
+    {
+      std::cout << "Clic sur annuler" << std::endl;
+      break;
+    }
     default:
-      {
-        std::cout << "Mauvais clic" << std::endl;
-        break;
-      }
+    {
+      std::cout << "Mauvais clic" << std::endl;
+      break;
+    }
   }
   if (filename != "")
   {
