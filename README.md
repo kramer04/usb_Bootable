@@ -12,7 +12,11 @@ Install library glibmm-3.0
 # How to compile
 Open a terminal where you have unzip files
 
-`g++ -g main.cpp src/*.cpp -lstdc++fs -pthread -I include -o main `pkg-config gtkmm-3.0 --cflags --libs` -Wall -Wextra -O2`
+```
+
+g++ -g main.cpp src/*.cpp -lstdc++fs -pthread -I include -o main `pkg-config gtkmm-3.0 --cflags --libs` -Wall -Wextra -O2
+```
+
 ![compile](https://user-images.githubusercontent.com/29018157/128821315-51daed2b-c0b2-4e21-9270-50b65b967d0f.png)
 
 
