@@ -6,7 +6,7 @@
 ### To use on Ubuntu
 
 
-## Install library glibmm-3.0
+## Install library gtkmm-3.0
 ```
 sudo apt-get install libgtkmm-3.0-dev
 ```
