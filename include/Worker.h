@@ -8,14 +8,14 @@
 class Fenetre;
 class Worker
 {
-    public:
+public:
     Worker();
     void do_work(Fenetre *caller);
     void stop_work();
     void get_data(double *fraction_done);
     bool has_stopped() const;
 
-    private:
+private:
     mutable std::mutex m_Mutex;
     bool m_has_stopped;
     long long source_size;
