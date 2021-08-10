@@ -7,8 +7,9 @@
 
 
 ## Install library glibmm-3.0
-
-`sudo apt-get install libglibmm-3.0-dev`
+```
+sudo apt-get install libglibmm-3.0-dev
+```
 
 ## How to compile
 ### Open a terminal where you have unzip files
@@ -19,8 +20,9 @@ g++ -g main.cpp src/*.cpp -lstdc++fs -pthread -I include -o main `pkg-config gtk
 
 
 ### To launch programm
-
-`sudo ./main`
+```
+sudo ./main
+```
 
 ![capture_wait](https://user-images.githubusercontent.com/29018157/128824495-9eb37701-2161-4af4-a73e-605e386910c2.png)
 
