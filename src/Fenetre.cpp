@@ -15,7 +15,7 @@ Fenetre::Fenetre() :
   m_mountPointIso("/mnt/iso"), m_mountPointUsb("/mnt/usb")
 
 {
-  set_title("Multi-threaded example");
+  set_title("Créer une clé USB bootable");
   set_border_width(5);
   set_default_size(300, 150);
   set_position(Gtk::WIN_POS_CENTER);
