@@ -1,6 +1,126 @@
 #include "Fenetre.h"
 
-std::string getPopen(std::string cmd)
+Fenetre::Fenetre() :
+  m_boxH(Gtk::ORIENTATION_HORIZONTAL, 5),
+  m_boxV(Gtk::ORIENTATION_VERTICAL, 5),
+  m_listeDeroulante(),
+  m_buttonBox(Gtk::ORIENTATION_HORIZONTAL),
+  m_demarrer(Gtk::Stock::EXECUTE), m_isofile("Fichier ISO"), m_Q(Gtk::Stock::QUIT),
+  m_progressBar(),
+  m_label("Démarrage"),
+  m_dispatcher(),
+  m_Worker(),
+  m_stateLabel(false),
+  m_WorkerThread(nullptr),
+  m_mountPointIso("/mnt/iso"), m_mountPointUsb("/mnt/usb")
+
+{
+  set_title("Multi-threaded example");
+  set_border_width(5);
+  set_default_size(300, 150);
+  set_position(Gtk::WIN_POS_CENTER);
+  set_icon_from_file("icons8-cle-usb-81.png");
+
+  m_progressBar.set_text("Barre de progression");
+  m_progressBar.set_show_text();
+  m_demarrer.set_sensitive(false);
+  m_isofile.set_sensitive(false);
+
+  m_buttonBox.pack_start(m_demarrer, Gtk::PACK_SHRINK);
+  m_buttonBox.pack_start(m_isofile, Gtk::PACK_SHRINK);
+  m_buttonBox.pack_end(m_Q, Gtk::PACK_SHRINK);
+  m_boxH.pack_start(m_buttonBox);
+  m_boxV.pack_start(m_progressBar);
+  m_boxV.pack_start(m_listeDeroulante);
+  m_boxV.pack_start(m_label);
+  m_boxV.pack_start(m_boxH);
+
+  m_demarrer.signal_clicked().connect([this]() {on_start_button_clicked();});
+  m_Q.signal_clicked().connect([this]() {on_quit_button_clicked();});
+  m_isofile.signal_clicked().connect([this]() {ouvrir_fichier();});
+  m_listeDeroulante.signal_changed().connect([this] {active_listederoulante();});
+  m_dispatcher.connect(sigc::mem_fun(*this, &Fenetre::on_notification_from_worker_thread));
+
+  add(m_boxV);
+  lsblk();
+  //update_start_stop_buttons();
+  show_all_children();
+}
+void Fenetre::notify()
+{
+  m_dispatcher.emit();
+}
+void Fenetre::on_start_button_clicked()
+{
+  create_mount_point();
+  if (m_WorkerThread)
+  {
+    std::cout << "Can't start a worker thread while another one is running." << std::endl;
+  }
+  else
+  {
+    // Start a new worker thread.
+    m_WorkerThread = new std::thread(
+      [this] {
+        m_Worker.do_work(this);
+      });
+  }
+  update_start_stop_buttons();
+}
+void Fenetre::update_start_stop_buttons()
+{
+  const bool thread_is_running = m_WorkerThread != nullptr;
+  m_demarrer.set_sensitive(!thread_is_running);
+  m_isofile.set_sensitive(!thread_is_running);
+  m_Q.set_sensitive(!thread_is_running);
+}
+void Fenetre::update_widget()
+{
+  double fraction_done;
+  Glib::ustring message_from_worker_thread;
+  bool inverted, copyFinished;
+  m_Worker.get_data(&fraction_done, &message_from_worker_thread, &inverted, &copyFinished);
+
+  if (copyFinished == false)
+  {
+    m_progressBar.set_fraction(fraction_done);
+    m_label.set_text(message_from_worker_thread);
+  }
+  else
+  {
+    m_label.set_text(message_from_worker_thread);
+    //m_progressBar.set_inverted(inverted);
+    m_progressBar.set_pulse_step(0.4);
+    m_progressBar.pulse();
+    //m_progressBar.set_fraction(fraction_done);
+  }
+}
+void Fenetre::on_notification_from_worker_thread()
+{
+  if (m_WorkerThread && m_Worker.has_stopped())
+  {
+    // Work is done.
+    if (m_WorkerThread->joinable())
+      m_WorkerThread->join();
+    delete m_WorkerThread;
+    m_WorkerThread = nullptr;
+    update_start_stop_buttons();
+  }
+  update_widget();
+}
+void Fenetre::on_quit_button_clicked()
+{
+  if (m_WorkerThread)
+  {
+    // Order the worker thread to stop and wait for it to stop.
+    m_Worker.stop_work();
+    if (m_WorkerThread->joinable())
+      m_WorkerThread->join();
+  }
+  hide();
+}
+//Popen
+std::string Fenetre::getPopen(std::string cmd)
 {
 
   std::string data;
@@ -20,184 +140,34 @@ std::string getPopen(std::string cmd)
   }
   return data;
 }
-
-Fenetre::Fenetre() :
-  filename(), chemin_usb(), m_ProgressBar(),
-  boiteV(Gtk::ORIENTATION_VERTICAL, 5), boutonBox(Gtk::ORIENTATION_HORIZONTAL),
-  boutonQ(Gtk::Stock::QUIT), lance_copie("Lance la copie"), ouvrirFichier("Fichier iso/img"),
-  m_Dispatcher(), m_WorkerThread(nullptr), state(false)
+// Liste déroulante
+void Fenetre::lsblk()
 {
-  set_title("Création d'une clé usb bootable");
-  set_border_width(5);
-  set_default_size(320, 150);
-  set_position(Gtk::WIN_POS_CENTER);
-  set_icon_from_file("icons8-cle-usb-81.png");
-
-  add(boiteV);
-
-  pourcentage.set_justify(Gtk::JUSTIFY_CENTER);
-  etat.set_justify(Gtk::JUSTIFY_CENTER);
-  m_frame.add(etat);
-
-  boiteV.pack_start(m_ProgressBar, Gtk::PACK_SHRINK);
-  boiteV.pack_start(pourcentage, Gtk::PACK_EXPAND_WIDGET);
-  boiteV.pack_end(m_frame);
-  boiteV.pack_start(listeDeroulante, Gtk::PACK_SHRINK);
-  boiteV.pack_start(boutonBox, Gtk::PACK_SHRINK);
-  boutonBox.pack_start(ouvrirFichier, Gtk::PACK_SHRINK);
-  boutonBox.pack_start(lance_copie, Gtk::PACK_SHRINK);
-  boutonBox.pack_start(boutonQ, Gtk::PACK_SHRINK);
-  boutonBox.set_border_width(5);
-  boutonBox.set_spacing(5);
-  boutonBox.set_layout(Gtk::BUTTONBOX_CENTER);
-
-  //boutons sur off
-  lance_copie.set_sensitive(false);
-  ouvrirFichier.set_sensitive(false);
-
-  //clique
-  boutonQ.signal_clicked().connect([this] () { on_quit_button_clicked(); });
-  listeDeroulante.signal_changed().connect([this] () { active_listederoulante(); });
-  ouvrirFichier.signal_clicked().connect([this] () { ouvrir_fichier(); });
-  lance_copie.signal_clicked().connect([this] () { on_start_button_clicked(); });
-
-  //dispatcher
-  m_Dispatcher.connect(sigc::mem_fun(*this, &Fenetre::on_notification_from_worker_thread));
-
-  //liste déroulante
-  f_lsblk();
-
-  show_all_children();
-}
-
-void Fenetre::notify()
-{
-  m_Dispatcher.emit();
-}
-void Fenetre::update_widgets()
-{
-  double fraction_done;
-  m_worker.get_data(&fraction_done);
-  m_ProgressBar.set_fraction(fraction_done);
-  fraction_done *= 100;
-  int precision {3};
-  if (fraction_done == 100)
-  {
-    precision = 4;
-  }
-  else if (fraction_done < 10)
-  {
-    precision = 2;
-  }
-
-  //fraction_done == 100 ? precision = 4 : precision = 3;
-  //std::string trimmedString = std::to_string(doubleVal).substr(0, std::to_string(doubleVal).find(".") + precisionVal + 1);
-  //suprime les chiffres après la virgule
-  pourcentage.set_text(std::to_string(fraction_done).substr(0, std::to_string(fraction_done).find(".") + precision) + " %");
-
-  if (state)
-  {
-    etat.set_text("");
-    state = !state;
-  }
-  else
-  {
-    etat.set_text("Wait ...");
-    state = !state;
-  }
-  if (fraction_done == 100)
-  {
-    etat.set_text("Copie terminée");
-  }
-}
-void Fenetre::on_notification_from_worker_thread()
-{
-
-  if (m_WorkerThread && m_worker.has_stopped())
-  {
-    // Work is done.
-    if (m_WorkerThread->joinable())
-      m_WorkerThread->join();
-    delete m_WorkerThread;
-    m_WorkerThread = nullptr;
-    update_start_stop_buttons();
-  }
-  update_widgets();
-}
-
-void Fenetre::active_listederoulante()
-{
-  ouvrirFichier.set_sensitive(true);
-  if (listeDeroulante.get_active_row_number() == 0)
-  {
-    ouvrirFichier.set_sensitive(false);
-  }
-  chemin_usb = listeDeroulante.get_active_text();
-}
-void ::Fenetre::on_start_button_clicked()
-{
-
-  if (m_WorkerThread)
-  {
-    std::cout << "Ne peut lancer deux threads en même temps" << std::endl;
-  }
-  else
-  {
-    //lance un nouveau thread
-    m_WorkerThread = new std::thread(
-      [this] {
-      m_worker.do_work(this);
-    });
-  }
-  update_start_stop_buttons();
-}
-void Fenetre::update_start_stop_buttons()
-{
-  const bool thread_is_running = m_WorkerThread != nullptr;
-
-  lance_copie.set_sensitive(!thread_is_running);
-  boutonQ.set_sensitive(!thread_is_running);
-  ouvrirFichier.set_sensitive(!thread_is_running);
-}
-void Fenetre::f_lsblk()
-{
-  std::string lsblk {R"(lsblk -dPo tran,label,model,size,path | grep usb | awk '/sd/' | sed 's/"//g')"};
-  std::string env_p {getPopen(lsblk)};
-  //std::vector<std::string> flux{};
+  std::string lsblk{R"(lsblk -dPo tran,label,model,size,path | grep usb | awk '/sd/' | sed 's/"//g')"};
+  std::string env_p{getPopen(lsblk)};
   std::istringstream str(env_p);
-  std::string ligne {""};
+  std::string ligne{""};
 
-  if (env_p != "")
+  if (env_p == "")
   {
-    listeDeroulante.append("Choisir une clé USB");
+    m_listeDeroulante.append("Pas de clé USB");
+    m_listeDeroulante.set_active(0);
+  }
+  else
+  {
+    m_listeDeroulante.append("Choisir une clé USB");
     while (std::getline(str, ligne))
     {
       //std::getline(str >> std::ws, ligne);
       //flux.push_back(ligne);
-      listeDeroulante.append(ligne);
+      m_listeDeroulante.append(ligne);
     }
+    m_listeDeroulante.set_active(0);
   }
-  else
-  {
-    listeDeroulante.append("Pas de clé USB");
-  }
-  listeDeroulante.set_active(0);
 }
-//quit
-void Fenetre::on_quit_button_clicked()
+void Fenetre::active_listederoulante()
 {
-  if (m_WorkerThread)
-  {
-    // Ordonner au thread de travail de s'arrêter et d'attendre qu'il s'arrête.
-    m_worker.stop_work();
-    if (m_WorkerThread->joinable())
-      m_WorkerThread->join();
-  }
-  if (std::filesystem::exists("out.txt"))
-  {
-    std::filesystem::remove("out.txt");
-  }
-  hide();
+  m_listeDeroulante.get_active_row_number() > 0 ? m_isofile.set_sensitive(true) : m_isofile.set_sensitive(false);
 }
 //fichier iso
 void Fenetre::ouvrir_fichier()
@@ -247,9 +217,9 @@ void Fenetre::ouvrir_fichier()
     case (Gtk::RESPONSE_OK):
     {
       //Notice that this is a std::string, not a Glib::ustring.
-      filename = dialog.get_filename();
-      std::cout << "Fichier sélectionné : " << filename << std::endl;
-      std::cout << "Taille de filename = " << std::filesystem::file_size(filename) << std::endl;
+      m_filename = dialog.get_filename();
+      std::cout << "Fichier sélectionné : " << m_filename << std::endl;
+      std::cout << "Taille de m_filename = " << std::filesystem::file_size(m_filename) << std::endl;
       break;
     }
     case (Gtk::RESPONSE_CANCEL):
@@ -263,12 +233,46 @@ void Fenetre::ouvrir_fichier()
       break;
     }
   }
-  if (filename != "")
+
+  if (m_filename != "")
   {
-    lance_copie.set_sensitive(true);
+    m_demarrer.set_sensitive(true);
   }
   else
   {
-    lance_copie.set_sensitive(false);
+    m_demarrer.set_sensitive(false);
+  }
+}
+void Fenetre::create_mount_point()
+{
+  // Point de montage de l'iso
+  std::string iso{m_filename};std::cout << m_filename << "\n";
+  iso = "iso=" + iso;
+  char *c = new char [iso.size() + 1];
+  strcpy(c, iso.c_str());
+  putenv(c);
+
+  // Point de montage de la clé USB
+  std::string usb{m_listeDeroulante.get_active_text()};
+  usb = "usb=" + usb;
+  char *d = new char [usb.size() + 1];
+  strcpy(d, usb.c_str());
+  putenv(d);
+
+  int status = system(R"(bash ./mountpoint.sh "$iso" "$usb")");
+  status != -1 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
+
+  delete c;
+  c = nullptr;
+  delete d;
+  d = nullptr;
+
+}
+void Fenetre::delete_unmount_point()
+{
+  if (std::filesystem::exists(m_mountPointIso) || std::filesystem::exists(m_mountPointUsb))
+  {
+    int status = system("bash ./unmountpoint.sh");std::cout << status << "\n";
+    status != -1 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
   }
 }
