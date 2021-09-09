@@ -8,7 +8,7 @@
 
 ## Install library gtkmm-3.0
 ```
-sudo apt-get install libgtkmm-3.0-dev
+sudo apt install libgtkmm-3.0-dev
 ```
 ![French doc about gtkmm](https://doc.ubuntu-fr.org/gtkmm)
 
@@ -25,6 +25,3 @@ g++ -g main.cpp src/*.cpp -lstdc++fs -pthread -I include -o main `pkg-config gtk
 sudo ./main
 ```
 
-![capture_wait](https://user-images.githubusercontent.com/29018157/128824495-9eb37701-2161-4af4-a73e-605e386910c2.png)
-
-![copie_terminee](https://user-images.githubusercontent.com/29018157/128824573-018917eb-03aa-4547-bf1f-bed7e0b37cfa.png)
