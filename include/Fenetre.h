@@ -2,53 +2,62 @@
 #define FENETRE_H
 
 #include "Worker.h"
-#include <gtkmm-3.0/gtkmm/box.h>
-#include <gtkmm-3.0/gtkmm/button.h>
-#include <gtkmm-3.0/gtkmm/buttonbox.h>
-#include <gtkmm-3.0/gtkmm/window.h>
 #include <iostream>
-//#include <gtkmm-3.0/gtkmm/checkbutton.h>
-#include <filesystem>
 #include <glibmm-2.4/glibmm/dispatcher.h>
+#include <gtkmm-3.0/gtkmm/window.h>
+#include <gtkmm-3.0/gtkmm/box.h>
+#include <gtkmm-3.0/gtkmm/buttonbox.h>
+#include <gtkmm-3.0/gtkmm/button.h>
 #include <gtkmm-3.0/gtkmm/comboboxtext.h>
-#include <gtkmm-3.0/gtkmm/filechooserdialog.h>
-#include <gtkmm-3.0/gtkmm/label.h>
 #include <gtkmm-3.0/gtkmm/progressbar.h>
+#include <gtkmm-3.0/gtkmm/label.h>
 #include <gtkmm-3.0/gtkmm/stock.h>
-#include <gtkmm-3.0/gtkmm/frame.h>
+#include <gtkmm-3.0/gtkmm/filechooserdialog.h>
+#include <filesystem>
 #include <string>
+#include <cstdlib>
 
-class Fenetre : public Gtk::Window
+class Fenetre :public Gtk::Window
 {
-public:
-  Fenetre();
-  void f_lsblk();
-  void ouvrir_fichier();
-  void notify();
+  private:
+  Gtk::Box m_boxH, m_boxV;
+  Gtk::ComboBoxText m_listeDeroulante;
+  Gtk::ButtonBox m_buttonBox;
+  Gtk::Button m_demarrer, m_isofile, m_Q;
+  Gtk::ProgressBar m_progressBar;
+  Gtk::Label m_label;
+  Glib::Dispatcher m_dispatcher;
+
+  std::string m_filename;
+
+  // Signal handlers.
   void on_start_button_clicked();
-  void update_start_stop_buttons();
   void on_quit_button_clicked();
-  void active_listederoulante();
+  void update_widget();
+  void update_start_stop_buttons();
+  void ouvrir_fichier();
+  // Dispatcher handler.
   void on_notification_from_worker_thread();
-  void update_widgets();
 
-  std::string filename, chemin_usb;
+  //création de la liste déroulante
+  void lsblk();
+  //popen : récupère le résultat d'une commande dans le terminal
+  std::string getPopen(std::string cmd);
+  //liste déroulante
+  void active_listederoulante();
 
-  Gtk::ProgressBar m_ProgressBar;
-  Gtk::ComboBoxText listeDeroulante;
-
-private:
-  Gtk::Box boiteV;
-  Gtk::ButtonBox boutonBox;
-  Gtk::Button boutonQ, lance_copie, ouvrirFichier;
-  Gtk::Label pourcentage, etat;
-  Gtk::Frame m_frame;
-
-  Glib::Dispatcher m_Dispatcher;
+  Worker m_Worker;
+  bool m_stateLabel;
   std::thread *m_WorkerThread;
-  Worker m_worker;
 
-  bool state;
+  std::string m_mountPointIso, m_mountPointUsb;
+
+  public:
+  Fenetre();
+  void notify();
+  // Functions
+  void create_mount_point();
+  void delete_unmount_point();
 };
 
 #endif
