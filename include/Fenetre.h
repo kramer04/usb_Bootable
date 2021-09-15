@@ -13,6 +13,7 @@
 #include <gtkmm-3.0/gtkmm/label.h>
 #include <gtkmm-3.0/gtkmm/stock.h>
 #include <gtkmm-3.0/gtkmm/filechooserdialog.h>
+#include <gtkmm-3.0/gtkmm/frame.h>
 #include <filesystem>
 #include <string>
 #include <cstdlib>
@@ -22,10 +23,11 @@ class Fenetre :public Gtk::Window
   private:
   Gtk::Box m_boxH, m_boxV;
   Gtk::ComboBoxText m_listeDeroulante;
-  Gtk::ButtonBox m_buttonBox;
+  Gtk::HButtonBox m_buttonBox;
   Gtk::Button m_demarrer, m_isofile, m_Q;
   Gtk::ProgressBar m_progressBar;
-  Gtk::Label m_label;
+  Gtk::Label m_labelIso, m_label;
+  Gtk::Frame m_frameLd, m_frame;
   Glib::Dispatcher m_dispatcher;
 
   std::string m_filename;
