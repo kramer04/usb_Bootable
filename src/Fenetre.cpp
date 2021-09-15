@@ -4,20 +4,21 @@ Fenetre::Fenetre() :
   m_boxH(Gtk::ORIENTATION_HORIZONTAL, 5),
   m_boxV(Gtk::ORIENTATION_VERTICAL, 5),
   m_listeDeroulante(),
-  m_buttonBox(Gtk::ORIENTATION_HORIZONTAL),
+  m_buttonBox(Gtk::BUTTONBOX_START, 10),
   m_demarrer(Gtk::Stock::EXECUTE), m_isofile("Fichier ISO"), m_Q(Gtk::Stock::QUIT),
   m_progressBar(),
+  m_labelIso(),
   m_label("Démarrage"),
   m_dispatcher(),
   m_Worker(),
   m_stateLabel(false),
   m_WorkerThread(nullptr),
-  m_mountPointIso("/mnt/iso"), m_mountPointUsb("/mnt/usb")
+  m_mountPointIso("/mnt/iso"), m_mountPointUsb("/mnt/ubuntu")
 
 {
   set_title("Créer une clé USB bootable");
   set_border_width(5);
-  set_default_size(300, 150);
+  set_default_size(450, 220);
   set_position(Gtk::WIN_POS_CENTER);
   set_icon_from_file("icons8-cle-usb-81.png");
 
@@ -25,15 +26,27 @@ Fenetre::Fenetre() :
   m_progressBar.set_show_text();
   m_demarrer.set_sensitive(false);
   m_isofile.set_sensitive(false);
+  m_frameLd.set_label("Clé USB");
+  m_frameLd.set_shadow_type(Gtk::SHADOW_OUT);
+  m_frame.set_label("Fichier ISO");
+  m_frame.set_shadow_type(Gtk::SHADOW_OUT);
+  m_listeDeroulante.set_can_focus(true);
+  m_Q.set_can_focus(false);
 
-  m_buttonBox.pack_start(m_demarrer, Gtk::PACK_SHRINK);
+  m_frameLd.add(m_listeDeroulante);
+  m_frame.add(m_labelIso);
+
   m_buttonBox.pack_start(m_isofile, Gtk::PACK_SHRINK);
+  m_buttonBox.pack_start(m_demarrer, Gtk::PACK_SHRINK);
   m_buttonBox.pack_end(m_Q, Gtk::PACK_SHRINK);
   m_boxH.pack_start(m_buttonBox);
+  m_buttonBox.set_child_secondary(m_Q);
+  m_boxV.pack_start(m_frameLd);
+  m_boxV.pack_start(m_frame);
   m_boxV.pack_start(m_progressBar);
-  m_boxV.pack_start(m_listeDeroulante);
   m_boxV.pack_start(m_label);
   m_boxV.pack_start(m_boxH);
+
 
   m_demarrer.signal_clicked().connect([this]() {on_start_button_clicked();});
   m_Q.signal_clicked().connect([this]() {on_quit_button_clicked();});
@@ -73,13 +86,15 @@ void Fenetre::update_start_stop_buttons()
   m_demarrer.set_sensitive(!thread_is_running);
   m_isofile.set_sensitive(!thread_is_running);
   m_Q.set_sensitive(!thread_is_running);
+  m_listeDeroulante.set_sensitive(!thread_is_running);
 }
 void Fenetre::update_widget()
 {
   double fraction_done;
   Glib::ustring message_from_worker_thread;
-  bool inverted, copyFinished;
-  m_Worker.get_data(&fraction_done, &message_from_worker_thread, &inverted, &copyFinished);
+  //bool inverted, copyFinished;
+  bool copyFinished;
+  m_Worker.get_data(&fraction_done, &message_from_worker_thread, &copyFinished);
 
   if (copyFinished == false)
   {
@@ -237,14 +252,17 @@ void Fenetre::ouvrir_fichier()
   if (m_filename != "")
   {
     m_demarrer.set_sensitive(true);
+    m_labelIso.set_text(m_filename);
   }
   else
   {
     m_demarrer.set_sensitive(false);
+    m_labelIso.set_text("");
   }
 }
 void Fenetre::create_mount_point()
 {
+  m_label.set_text("Formate la clé USB");
   // Point de montage de l'iso
   std::string iso{m_filename};std::cout << m_filename << "\n";
   iso = "iso=" + iso;
@@ -260,7 +278,7 @@ void Fenetre::create_mount_point()
   putenv(d);
 
   int status = system(R"(bash ./mountpoint.sh "$iso" "$usb")");
-  status != -1 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
+  status == 0 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
 
   delete c;
   c = nullptr;
@@ -273,6 +291,6 @@ void Fenetre::delete_unmount_point()
   if (std::filesystem::exists(m_mountPointIso) || std::filesystem::exists(m_mountPointUsb))
   {
     int status = system("bash ./unmountpoint.sh");std::cout << status << "\n";
-    status != -1 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
+    status == 0 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
   }
 }
