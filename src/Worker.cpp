@@ -11,11 +11,12 @@ Worker::Worker() :
   m_shall_stop(false),
   m_has_stopped(false),
   m_copy_has_finished(false),
-  m_inverted_progressBar(false),
+  //m_inverted_progressBar(false),
+  m_mountPointIso("/mnt/iso"), m_mountPointUsb("/mnt/ubuntu"),
   m_message()
 {}
 
-void Worker::get_data(double *fraction_done, Glib::ustring *message, bool *inverted, bool *copyFinished) const
+void Worker::get_data(double *fraction_done, Glib::ustring *message, bool *copyFinished) const
 {
   std::lock_guard<std::mutex> lock(m_Mutex);
 
@@ -27,7 +28,7 @@ void Worker::get_data(double *fraction_done, Glib::ustring *message, bool *inver
   if (m_copy_has_finished)
   {
     *copyFinished = m_copy_has_finished;
-    *inverted = m_inverted_progressBar;
+    //*inverted = m_inverted_progressBar;
   }
 }
 void Worker::do_work(Fenetre *caller)
@@ -42,7 +43,7 @@ void Worker::do_work(Fenetre *caller)
   std::thread t1([this]() {
 
     auto const copyOption = std::filesystem::copy_options::recursive | std::filesystem::copy_options::skip_symlinks;
-    std::filesystem::copy("/mnt/iso", "/mnt/usb", copyOption);
+    std::filesystem::copy(m_mountPointIso, m_mountPointUsb, copyOption);
     {
       std::lock_guard<std::mutex> lock(m_Mutex);
       m_copy_has_finished = true;
@@ -53,24 +54,28 @@ void Worker::do_work(Fenetre *caller)
   std::thread t2([this, caller]() {
     {
       std::lock_guard<std::mutex> lock(m_Mutex);
-      m_sizeIso = folder_size("/mnt/iso");
+      m_sizeIso = folder_size(m_mountPointIso);
     }
     while (m_fraction_done < 1)
     {
       {
         std::lock_guard<std::mutex> lock(m_Mutex);
-        m_sizeUsb = folder_size("/mnt/usb");
-        m_fraction_done = static_cast<double>(m_sizeUsb) / m_sizeIso;
-        std::ostringstream ostr;
-        ostr << (m_fraction_done * 100.0) << " %";
-        if (m_copy_has_finished)
+        if (m_copy_has_finished == false)
+        {
+          m_sizeUsb = folder_size(m_mountPointUsb);
+          m_fraction_done = static_cast<double>(m_sizeUsb) / m_sizeIso;
+          std::ostringstream ostr;
+          ostr << (m_fraction_done * 100.0) << " %";
+          m_message = ostr.str();
+        }
+        else
         {
           m_fraction_done = 1;
-          ostr << " Copie terminée. Synchronization en cours";
+          std::ostringstream ostr;
+          ostr << (m_fraction_done * 100.0) << " %. Copie terminée. Synchronization en cours";
+          m_message = ostr.str();
           std::cout << "Copie terminée. Synchronization en cours" << std::endl;
         }
-        m_message = ostr.str();
-
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(250));
       caller->notify();
@@ -86,14 +91,14 @@ void Worker::do_work(Fenetre *caller)
 
   std::thread t3([]() {
     int status = system("bash ./unmountpoint.sh");
-    status != -1 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
-  });
+    status == 0 ? std::cout << "." << std::endl : std::cout << "Erreur exécution commande system" << std::endl;
+  });// fin t3
   std::thread t4([this, caller]() {
     {
       std::lock_guard<std::mutex> lock(m_Mutex);
       m_fraction_done = 0;
     }
-    while (std::filesystem::exists("/mnt/usb"))
+    while (std::filesystem::exists(m_mountPointUsb))
     {
       /*
       {
@@ -112,10 +117,11 @@ void Worker::do_work(Fenetre *caller)
     {
       std::lock_guard<std::mutex> lock(m_Mutex);
       std::ostringstream ostr;
-      ostr << "Copie sur la clé USB terminée";
+      ostr << "Création de la clé USB bootable terminée";
       m_message = ostr.str();
+      std::cout << "Création de la clé USB bootable terminée" << std::endl;
     }
-  });
+  });// fin t4
   if (t3.joinable())
     t3.join();
   if (t4.joinable())
