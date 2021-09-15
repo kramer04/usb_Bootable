@@ -28,6 +28,7 @@ Otherwise use Gparted to create one partition
 ```
 sudo ./main
 ```
-![1](https://user-images.githubusercontent.com/29018157/132638028-46ff8a90-dd24-4344-867c-4b2817363ea9.png)
-![2](https://user-images.githubusercontent.com/29018157/132638040-f33a269e-9b11-463a-9e12-e62071b3f846.png)
+![Capture d’écran de 2021-09-15 22-26-04](https://user-images.githubusercontent.com/29018157/133504896-af38865a-e178-4be4-a177-e514492887b3.png)
+![Capture d’écran de 2021-09-15 22-26-38](https://user-images.githubusercontent.com/29018157/133504909-62fc4c0e-43e2-4ce7-92b5-da132b05f5aa.png)
+![Capture d’écran de 2021-09-15 22-27-54](https://user-images.githubusercontent.com/29018157/133504920-787d0b27-4a24-4b93-8e2d-b6588b29d01c.png)
 
