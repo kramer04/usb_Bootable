@@ -24,7 +24,7 @@ g++ -g main.cpp src/*.cpp -lstdc++fs -pthread -I include -o main `pkg-config gtk
 └─sdf1   8:81   1  14,4G  0 part </pre>
 Otherwise use Gparted to create one partition
 
-### To launch programm
+### To launch program
 ```
 sudo ./main
 ```
